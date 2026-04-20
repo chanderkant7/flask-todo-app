@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]>      <html class="no-js"> <!--<![endif]-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>TODO</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <style>
+            body {
+                        background: linear-gradient(to right, #ff0000, #0000ff);
+                }
+            .w3-card-4{
+                display: inline-block;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 20px;
+                border: 1px solid #000;
+                padding: 10px;
+                }
+            .container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+
+            #popupContainer {
+                    display: none;
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    z-index: 9999;
+                }
+
+            #popupContent {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #fff;
+                    padding: 20px;
+                }
+
+            #closeButton {
+                margin-top: 10px;
+            }
+            #todoitem{
+                    border-radius: 5px;
+                    border: 1px solid #000;
+                    padding: 10px;
+                    background-color: whitesmoke;
+            }
+            #todoitem_comp{
+                    border-radius: 5px;
+                    border: 1px solid #000;
+                    padding: 10px;
+                    background-color: green;
+                    color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="#">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+        <div class="container">
+        <div class="w3-card-4" style="margin:auto" >
+                <div class="datetime"></div>
+                <header class="w3-container w3-light-grey">
+                    <h3>To Do List</h3>
+                </header>
+                <form action="/add" method="POST">
+                <div class="w3-container">
+                    <label for="title">Add Your Task Here</label>
+                    <input class="w3-input w3-border" type="text" name="title" placeholder="Enter Todo..">
+                    <button class="w3-button w3-circle w3-black" type="submit">+</button>
+                </div>
+                </form>
+
+                <!--{% for todo in todo_list%}
+                    <p>{{todo['title']}}</p>
+                    {% if todo['complete'] == False %}
+                        <span>Not complete</span>
+                    {% else %}
+                        <span>completed</span>
+                    {% endif %}
+                    <a href="/update/{{todo['id']}}"> <i class="fa fa-pencil"></i></a>
+                    <a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a>
+                {% endfor%}-->
+                
+                {% for todo in todo_list %}
+                    {% if todo['complete'] == False %}
+                        <div id = "todoitem">
+                        <p id = "{{todo['id']}}">{{todo['title']}}</p>
+                        <button><a href="/complete/{{todo['id']}}"> <i class="fa fa-check"></i></a></button>
+                        <button onclick="openPopup({{todo['id']}})"><i class="fa fa-pencil"></i></button>
+                        <button><a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a></button>
+                        </div>
+                    {% else %}
+                        <div id = "todoitem_comp">
+                        <p><del>{{todo['title']}}</del></p>
+                        <button onclick="openPopup({{todo['id']}})"><i class="fa fa-pencil"></i></button>
+                        <button><a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a></button>
+                    </div>
+                    {% endif %}
+                    
+                {% endfor%}
+            
+        </div>
+    </div>
+    <div id="popupContainer">
+  <div id="popupContent">
+    <form action="/update" method="POST">
+        <input type="hidden" id="hiddenField" name="hiddenField">
+        <input type="text" id="inputField" placeholder="Enter text" name="inputField">
+        <button id="closeButton" type="submit">Update</button>
+    </form>
+  </div>
+</div>
+    <script>
+            function updateDateTime() {
+                var datetimeElement = document.querySelector('.datetime');
+                var currentDateTime = new Date();
+                datetimeElement.innerHTML = currentDateTime.toLocaleString();
+            }
+            // Update the date and time immediately
+            updateDateTime();
+            // Update the date and time every second
+            setInterval(updateDateTime, 1000); 
+
+            //pop input filed to modify the text
+            function openPopup(displayTextId) {
+                var displayText = document.getElementById(displayTextId).textContent;
+                var inputField = document.getElementById("inputField");
+                var hiddenField = document.getElementById("hiddenField");
+                inputField.value = displayText;
+                hiddenField.value = displayTextId;
+                document.getElementById("popupContainer").style.display = "block";
+            }
+
+            function closePopup() {
+                    document.getElementById("popupContainer").style.display = "none";
+            }
+
+</script>
+</body>
+</html>
