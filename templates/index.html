@@ -112,7 +112,7 @@
                         </div>
                     {% else %}
                         <div id = "todoitem_comp">
-                        <p><del>{{todo['title']}}</del></p>
+                        <p id = "{{todo['id']}}"><del>{{todo['title']}}</del></p>
                         <button onclick="openPopup({{todo['id']}})"><i class="fa fa-pencil"></i></button>
                         <button><a href="/delete/{{todo['id']}}"><i class="fa fa-trash-o"></i></a></button>
                     </div>
