@@ -1,47 +1,94 @@
-from flask import Flask, render_template , request , redirect ,url_for
-from tinydb import TinyDB, Query
-import random
+import os
+import uuid
 
-app = Flask(__name__)
-#createing typedb
-db = TinyDB('db.json')
+from flask import (
+    Blueprint,
+    Flask,
+    abort,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from tinydb import Query, TinyDB
+
+DB_PATH = os.environ.get("TODO_DB_PATH", "db.json")
+TODOS = Query()
+
+todo_bp = Blueprint("todo", __name__)
+db: TinyDB | None = None
 
 
-@app.route("/")
-def root():
-    todo_list = db.all()
-    return render_template('index.html',todo_list=todo_list)
+def get_db() -> TinyDB:
+    if db is None:
+        raise RuntimeError("Database is not initialized. Call create_app() first.")
+    return db
 
-@app.route("/add",methods=["POST"])
-def add():
-    #add new item
-    title = request.form.get("title")
-    db.insert({'id':random.randint(0, 1000),'title': title, 'complete': False})
-    return redirect(url_for("root"))
 
-@app.route("/update",methods=["POST"])
-def update():
-    #update the todo titel
-    todo_db = Query()
-    newTest = request.form.get('inputField')
-    todo_id =  request.form.get('hiddenField')
-    db.update({"title": newTest},todo_db.id == int(todo_id))
-    return redirect(url_for("root"))
+@todo_bp.route("/")
+def list_todos():
+    todo_list = get_db().all()
+    return render_template("index.html", todo_list=todo_list)
 
-@app.route("/delete/<int:todo_id>")
-def delete(todo_id):
-    #delete the todo 
-    todo_db = Query()
-    db.remove(todo_db.id == todo_id)
-    return redirect(url_for("root"))
 
-@app.route("/complete/<int:todo_id>")
-def complete(todo_id):
-    #mark complete
-    todo_db = Query()
-    db.update({"complete": True},todo_db.id == todo_id)
-    return redirect(url_for("root"))
-    
+@todo_bp.route("/add", methods=["POST"])
+def create_todo():
+    title = (request.form.get("title") or "").strip()
+    if not title:
+        abort(400, description="Title is required.")
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    get_db().insert({"id": uuid.uuid4().hex, "title": title, "complete": False})
+    return redirect(url_for("todo.list_todos"))
+
+
+@todo_bp.route("/update", methods=["POST"])
+def update_todo():
+    updated_title = (request.form.get("title") or "").strip()
+    todo_id = request.form.get("todo_id")
+
+    if not todo_id:
+        abort(400, description="Todo ID is required.")
+    if not updated_title:
+        abort(400, description="Updated title is required.")
+
+    updated_items = get_db().update({"title": updated_title}, TODOS.id == todo_id)
+    if not updated_items:
+        abort(404, description=f"Todo '{todo_id}' was not found.")
+
+    return redirect(url_for("todo.list_todos"))
+
+
+@todo_bp.route("/delete/<string:todo_id>", methods=["POST"])
+def delete_todo(todo_id: str):
+    removed_items = get_db().remove(TODOS.id == todo_id)
+    if not removed_items:
+        abort(404, description=f"Todo '{todo_id}' was not found.")
+
+    return redirect(url_for("todo.list_todos"))
+
+
+@todo_bp.route("/complete/<string:todo_id>", methods=["POST"])
+def complete_todo(todo_id: str):
+    updated_items = get_db().update({"complete": True}, TODOS.id == todo_id)
+    if not updated_items:
+        abort(404, description=f"Todo '{todo_id}' was not found.")
+
+    return redirect(url_for("todo.list_todos"))
+
+
+def create_app() -> Flask:
+    flask_app = Flask(__name__)
+    flask_app.config["TODO_DB_PATH"] = DB_PATH
+
+    global db
+    db = TinyDB(flask_app.config["TODO_DB_PATH"])
+
+    flask_app.register_blueprint(todo_bp)
+    return flask_app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug_mode)
